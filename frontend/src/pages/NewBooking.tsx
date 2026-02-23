@@ -33,7 +33,6 @@ import {
   formatCurrency 
 } from '@/lib/storage';
 import { getVehiclesOnce, addRentalToFirestore } from '@/lib/firestoreService';
-import { saveBookingToR2, uploadToR2 } from '@/lib/r2Storage';
 import { saveRental } from '@/lib/storage';
 import { Client, Vehicle, Witness, RentType, PaymentStatus, Rental } from '@/types/rental';
 import { toast } from 'sonner';
