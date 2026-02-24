@@ -2,6 +2,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.996.0",
     "@aws-sdk/s3-request-presigner": "^3.996.0",
+    "aws-sdk": "^2.1693.0",
     "backblaze-b2": "^1.7.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",

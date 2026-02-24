@@ -1,41 +1,65 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const B2 = require("backblaze-b2");
+const AWS = require("aws-sdk");
 const fs = require("fs");
 
 const app = express();
 app.use(cors());
 
+// Multer setup (temporary uploads folder)
 const upload = multer({ dest: "uploads/" });
 
-const b2 = new B2({
-  applicationKeyId: process.env.B2_KEY_ID,
-  applicationKey: process.env.B2_APP_KEY,
+// S3 Compatible Backblaze B2 Setup
+const s3 = new AWS.S3({
+  endpoint: "https://s3.us-east-005.backblazeb2.com", // tumhara endpoint
+  accessKeyId: process.env.B2_KEY_ID,
+  secretAccessKey: process.env.B2_APPLICATION_KEY,
+  signatureVersion: "v4",
 });
 
+// Upload function
 async function uploadToB2(filePath, fileName) {
-  await b2.authorize();
+  const fileContent = fs.readFileSync(filePath);
 
-  const uploadUrl = await b2.getUploadUrl({
-    bucketId: process.env.B2_BUCKET_ID,
-  });
+  const params = {
+    Bucket: process.env.B2_BUCKET_NAME,
+    Key: Date.now() + "-" + fileName, // unique file name
+    Body: fileContent,
+  };
 
-  const fileData = fs.readFileSync(filePath);
+  const data = await s3.upload(params).promise();
 
-  await b2.uploadFile({
-    uploadUrl: uploadUrl.data.uploadUrl,
-    uploadAuthToken: uploadUrl.data.authorizationToken,
-    fileName: fileName,
-    data: fileData,
-  });
+  // Delete local file after upload
+  fs.unlinkSync(filePath);
 
-  return `https://f000.backblazeb2.com/file/${process.env.B2_BUCKET_NAME}/${fileName}`;
+  return data.Key; // sirf key return karenge
 }
 
+// Generate signed URL for private bucket
+function getSignedUrl(key) {
+  const params = {
+    Bucket: process.env.B2_BUCKET_NAME,
+    Key: key,
+    Expires: 60 * 60, // 1 hour
+  };
+
+  return s3.getSignedUrl("getObject", params);
+}
+
+// Upload route
 app.post("/upload", upload.single("file"), async (req, res) => {
-  const url = await uploadToB2(req.file.path, req.file.originalname);
-  res.json({ url });
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const fileKey = await uploadToB2(req.file.path, req.file.originalname);
+    const signedUrl = getSignedUrl(fileKey);
+
+    res.json({ success: true, url: signedUrl });
+  } catch (error) {
+    console.error("Upload Error:", error);
+    res.status(500).json({ success: false, error: "Upload failed" });
+  }
 });
 
-app.listen(3001, () => console.log("B2 server running"));
+app.listen(3001, () => console.log("B2 S3 server running on port 3001"));
