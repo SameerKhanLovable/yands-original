@@ -1,8 +1,8 @@
 const express = require("express");
 const multer = require("multer");
+const cors = require("cors");
 const B2 = require("backblaze-b2");
 const fs = require("fs");
-const cors = require("cors");
 
 const app = express();
 app.use(cors());
@@ -34,12 +34,8 @@ async function uploadToB2(filePath, fileName) {
 }
 
 app.post("/upload", upload.single("file"), async (req, res) => {
-  try {
-    const url = await uploadToB2(req.file.path, req.file.originalname);
-    res.json({ imageUrl: url });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const url = await uploadToB2(req.file.path, req.file.originalname);
+  res.json({ url });
 });
 
 app.listen(3001, () => console.log("B2 server running"));
