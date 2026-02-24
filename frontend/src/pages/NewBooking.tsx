@@ -33,6 +33,7 @@ import {
   formatCurrency 
 } from '@/lib/storage';
 import { getVehiclesOnce, addRentalToFirestore } from '@/lib/firestoreService';
+import { uploadToB2 } from '@/lib/b2Storage';
 import { saveRental } from '@/lib/storage';
 import { Client, Vehicle, Witness, RentType, PaymentStatus, Rental } from '@/types/rental';
 import { toast } from 'sonner';
@@ -333,7 +334,51 @@ const NewBooking = () => {
       const compressedRental = await compressRentalImages(rentalData);
       const compressTime = Date.now() - startCompress;
       console.log(`✅ Images compressed in ${compressTime}ms`);
-      console.log("📊 Rental data size (after compression):", JSON.stringify(compressedRental).length, "characters");
+
+      // Step 1.5: Upload images to Backblaze B2
+      console.log("☁️ Uploading images to Backblaze B2...");
+      const uploadImagesToB2 = async (data: any) => {
+        const timestamp = Date.now();
+        
+        if (data.client?.cnicFrontImage?.startsWith('data:image')) {
+          const blob = await fetch(data.client.cnicFrontImage).then(r => r.blob());
+          data.client.cnicFrontImage = await uploadToB2(blob, `rentals/${timestamp}_cnic_front.jpg`);
+        }
+        if (data.client?.cnicBackImage?.startsWith('data:image')) {
+          const blob = await fetch(data.client.cnicBackImage).then(r => r.blob());
+          data.client.cnicBackImage = await uploadToB2(blob, `rentals/${timestamp}_cnic_back.jpg`);
+        }
+        if (data.client?.photo?.startsWith('data:image')) {
+          const blob = await fetch(data.client.photo).then(r => r.blob());
+          data.client.photo = await uploadToB2(blob, `rentals/${timestamp}_client_photo.jpg`);
+        }
+        if (data.client?.drivingLicenseImage?.startsWith('data:image')) {
+          const blob = await fetch(data.client.drivingLicenseImage).then(r => r.blob());
+          data.client.drivingLicenseImage = await uploadToB2(blob, `rentals/${timestamp}_license.jpg`);
+        }
+        if (data.vehicle?.image?.startsWith('data:image')) {
+          const blob = await fetch(data.vehicle.image).then(r => r.blob());
+          data.vehicle.image = await uploadToB2(blob, `rentals/${timestamp}_vehicle.jpg`);
+        }
+        if (data.clientSignature?.startsWith('data:image')) {
+          const blob = await fetch(data.clientSignature).then(r => r.blob());
+          data.clientSignature = await uploadToB2(blob, `rentals/${timestamp}_client_sig.png`);
+        }
+        if (data.ownerSignature?.startsWith('data:image')) {
+          const blob = await fetch(data.ownerSignature).then(r => r.blob());
+          data.ownerSignature = await uploadToB2(blob, `rentals/${timestamp}_owner_sig.png`);
+        }
+        
+        return data;
+      };
+
+      try {
+        await uploadImagesToB2(compressedRental);
+        console.log("✅ All images uploaded to B2");
+      } catch (uploadError) {
+        console.error("❌ B2 Upload failed:", uploadError);
+        toast.error("Cloud storage upload failed. Images will be stored in database.");
+      }
 
       // Step 2: Try Firestore first, fallback to LocalStorage
       console.log("💾 Attempting to save to Firestore...");
