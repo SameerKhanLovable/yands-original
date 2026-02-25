@@ -393,10 +393,13 @@ const NewBooking = () => {
       try {
         await uploadImagesToB2(compressedRental);
         console.log("✅ All images uploaded to B2");
-      } catch (uploadError) {
+      } catch (uploadError: any) {
         console.error("❌ B2 Upload failed:", uploadError);
-        toast.error("Cloud storage upload failed. Images will be stored in database.");
-        // We continue anyway, but the images remain as base64 in compressedRental
+        if (uploadError.message === "CORS_ERROR") {
+          toast.error("Cloud storage blocked by CORS. You MUST set CORS rules in Backblaze to 'Share everything' or add your Replit domain.", { duration: 10000 });
+        } else {
+          toast.error("Cloud storage upload failed. Please check your Backblaze settings.");
+        }
       }
 
       // Step 2: Try Firestore first, fallback to LocalStorage
