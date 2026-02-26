@@ -30,28 +30,52 @@ const s3Client = new S3Client({
   apiVersion: 'latest',
 });
 
-export const uploadToB2 = async (file: File | Blob, fileName: string): Promise<string> => {
-  console.log(`📤 B2: Uploading ${fileName} to bucket ${B2_BUCKET_NAME}...`);
+// Helper to convert data URL to Blob
+const dataURLtoBlob = (dataurl: string) => {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+export const uploadToB2 = async (fileOrDataUrl: File | Blob | string, fileName: string): Promise<string> => {
+  console.log(`📤 B2: Uploading ${fileName}...`);
   
   if (!B2_BUCKET_NAME || !B2_ACCESS_KEY_ID || !B2_SECRET_ACCESS_KEY) {
     throw new Error("Backblaze B2 configuration is missing.");
+  }
+
+  let body: Blob | File;
+  let contentType: string;
+
+  if (typeof fileOrDataUrl === 'string' && fileOrDataUrl.startsWith('data:')) {
+    body = dataURLtoBlob(fileOrDataUrl);
+    contentType = body.type;
+  } else if (fileOrDataUrl instanceof File || fileOrDataUrl instanceof Blob) {
+    body = fileOrDataUrl;
+    contentType = fileOrDataUrl instanceof File ? fileOrDataUrl.type : "image/jpeg";
+  } else {
+    throw new Error("Invalid file format for upload");
   }
 
   try {
     const command = new PutObjectCommand({
       Bucket: B2_BUCKET_NAME,
       Key: fileName,
-      Body: file,
-      ContentType: file instanceof File ? file.type : "image/jpeg",
-      // Adding ACL if supported, though B2 handles this via bucket settings
+      Body: body,
+      ContentType: contentType,
     });
 
     await s3Client.send(command);
     return getDownloadUrl(fileName);
   } catch (error: any) {
     console.error(`❌ B2 Error for ${fileName}:`, error);
-    // If the error is empty {}, it's 99% a CORS issue
-    if (typeof error === 'object' && Object.keys(error).length === 0) {
+    if (error.name === 'TypeError' || (typeof error === 'object' && Object.keys(error).length === 0)) {
       throw new Error("CORS_ERROR");
     }
     throw error;

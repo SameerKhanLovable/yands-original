@@ -341,47 +341,37 @@ const NewBooking = () => {
         const timestamp = Date.now();
         const uploadPromises = [];
         
-        if (data.client?.cnicFrontImage?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.client.cnicFrontImage).then(r => r.blob());
-            data.client.cnicFrontImage = await uploadToB2(blob, `rentals/${timestamp}_cnic_front.jpg`);
-          })());
-        }
-        if (data.client?.cnicBackImage?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.client.cnicBackImage).then(r => r.blob());
-            data.client.cnicBackImage = await uploadToB2(blob, `rentals/${timestamp}_cnic_back.jpg`);
-          })());
-        }
-        if (data.client?.photo?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.client.photo).then(r => r.blob());
-            data.client.photo = await uploadToB2(blob, `rentals/${timestamp}_client_photo.jpg`);
-          })());
-        }
-        if (data.client?.drivingLicenseImage?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.client.drivingLicenseImage).then(r => r.blob());
-            data.client.drivingLicenseImage = await uploadToB2(blob, `rentals/${timestamp}_license.jpg`);
-          })());
-        }
-        if (data.vehicle?.image?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.vehicle.image).then(r => r.blob());
-            data.vehicle.image = await uploadToB2(blob, `rentals/${timestamp}_vehicle.jpg`);
-          })());
-        }
-        if (data.clientSignature?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.clientSignature).then(r => r.blob());
-            data.clientSignature = await uploadToB2(blob, `rentals/${timestamp}_client_sig.png`);
-          })());
-        }
-        if (data.ownerSignature?.startsWith('data:image')) {
-          uploadPromises.push((async () => {
-            const blob = await fetch(data.ownerSignature).then(r => r.blob());
-            data.ownerSignature = await uploadToB2(blob, `rentals/${timestamp}_owner_sig.png`);
-          })());
+        const imageFields = [
+          { field: 'client.cnicFrontImage', name: 'cnic_front' },
+          { field: 'client.cnicBackImage', name: 'cnic_back' },
+          { field: 'client.photo', name: 'client_photo' },
+          { field: 'client.drivingLicenseImage', name: 'license' },
+          { field: 'vehicle.image', name: 'vehicle' },
+          { field: 'clientSignature', name: 'client_sig' },
+          { field: 'ownerSignature', name: 'owner_sig' }
+        ];
+
+        for (const item of imageFields) {
+          const parts = item.field.split('.');
+          let target = data;
+          for (let i = 0; i < parts.length - 1; i++) {
+            target = target?.[parts[i]];
+          }
+          const lastPart = parts[parts.length - 1];
+          const value = target?.[lastPart];
+
+          if (value && typeof value === 'string' && value.startsWith('data:image')) {
+            uploadPromises.push((async () => {
+              try {
+                const ext = value.includes('png') ? 'png' : 'jpg';
+                const url = await uploadToB2(value, `rentals/${timestamp}_${item.name}.${ext}`);
+                target[lastPart] = url;
+              } catch (e) {
+                console.error(`Failed to upload ${item.name}:`, e);
+                throw e; // Rethrow to trigger the main catch block
+              }
+            })());
+          }
         }
         
         if (uploadPromises.length > 0) {
