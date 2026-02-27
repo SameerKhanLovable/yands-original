@@ -333,6 +333,7 @@ const NewBooking = () => {
       const compressedRental = await compressRentalImages(rentalData);
       const compressTime = Date.now() - startCompress;
       console.log(`✅ Images compressed in ${compressTime}ms`);
+      console.log("📊 Rental data size (after compression):", JSON.stringify(compressedRental).length, "characters");
 
       // Step 2: Try Firestore first, fallback to LocalStorage
       console.log("💾 Attempting to save to Firestore...");
