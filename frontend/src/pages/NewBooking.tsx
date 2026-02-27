@@ -33,7 +33,6 @@ import {
   formatCurrency 
 } from '@/lib/storage';
 import { getVehiclesOnce, addRentalToFirestore } from '@/lib/firestoreService';
-import { uploadToB2 } from '@/lib/b2Storage';
 import { saveRental } from '@/lib/storage';
 import { Client, Vehicle, Witness, RentType, PaymentStatus, Rental } from '@/types/rental';
 import { toast } from 'sonner';
@@ -334,63 +333,6 @@ const NewBooking = () => {
       const compressedRental = await compressRentalImages(rentalData);
       const compressTime = Date.now() - startCompress;
       console.log(`✅ Images compressed in ${compressTime}ms`);
-
-      // Step 1.5: Upload images to Backblaze B2
-      console.log("☁️ Uploading images to Backblaze B2...");
-      const uploadImagesToB2 = async (data: any) => {
-        const timestamp = Date.now();
-        const uploadPromises = [];
-        
-        const imageFields = [
-          { field: 'client.cnicFrontImage', name: 'cnic_front' },
-          { field: 'client.cnicBackImage', name: 'cnic_back' },
-          { field: 'client.photo', name: 'client_photo' },
-          { field: 'client.drivingLicenseImage', name: 'license' },
-          { field: 'vehicle.image', name: 'vehicle' },
-          { field: 'clientSignature', name: 'client_sig' },
-          { field: 'ownerSignature', name: 'owner_sig' }
-        ];
-
-        for (const item of imageFields) {
-          const parts = item.field.split('.');
-          let target = data;
-          for (let i = 0; i < parts.length - 1; i++) {
-            target = target?.[parts[i]];
-          }
-          const lastPart = parts[parts.length - 1];
-          const value = target?.[lastPart];
-
-          if (value && typeof value === 'string' && value.startsWith('data:image')) {
-            uploadPromises.push((async () => {
-              try {
-                const ext = value.includes('png') ? 'png' : 'jpg';
-                const url = await uploadToB2(value, `rentals/${timestamp}_${item.name}.${ext}`);
-                target[lastPart] = url;
-              } catch (e) {
-                console.error(`Failed to upload ${item.name}:`, e);
-                throw e; // Rethrow to trigger the main catch block
-              }
-            })());
-          }
-        }
-        
-        if (uploadPromises.length > 0) {
-          await Promise.all(uploadPromises);
-        }
-        return data;
-      };
-
-      try {
-        await uploadImagesToB2(compressedRental);
-        console.log("✅ All images uploaded to B2");
-      } catch (uploadError: any) {
-        console.error("❌ B2 Upload failed:", uploadError);
-        if (uploadError.message === "CORS_ERROR") {
-          toast.error("Cloud storage blocked by CORS. You MUST set CORS rules in Backblaze to 'Share everything' or add your Replit domain.", { duration: 10000 });
-        } else {
-          toast.error("Cloud storage upload failed. Please check your Backblaze settings.");
-        }
-      }
 
       // Step 2: Try Firestore first, fallback to LocalStorage
       console.log("💾 Attempting to save to Firestore...");
