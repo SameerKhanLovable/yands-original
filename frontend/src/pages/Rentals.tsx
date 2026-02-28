@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Eye, Trash2, Car } from 'lucide-react';
+import { Search, Filter, Eye, Trash2, Car, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/storage';
@@ -21,11 +21,14 @@ const Rentals = () => {
   useEffect(() => {
     // Load from LocalStorage first (immediate)
     try {
-      const localRentals = JSON.parse(localStorage.getItem('rentals') || '[]');
-      if (localRentals.length > 0) {
-        setRentals(localRentals);
-        setLoading(false);
-        console.log('📦 Loaded', localRentals.length, 'rentals from LocalStorage');
+      const storedRentals = localStorage.getItem('rentals');
+      if (storedRentals) {
+        const localRentals = JSON.parse(storedRentals);
+        if (localRentals.length > 0) {
+          setRentals(localRentals);
+          setLoading(false);
+          console.log('📦 Loaded', localRentals.length, 'rentals from LocalStorage');
+        }
       }
     } catch (error) {
       console.error('Failed to load from LocalStorage:', error);
@@ -35,8 +38,9 @@ const Rentals = () => {
     const unsubscribe = subscribeToRentals((firestoreData) => {
       if (firestoreData.length > 0) {
         // Merge Firestore + LocalStorage (prefer Firestore)
-        const localRentals = JSON.parse(localStorage.getItem('rentals') || '[]');
-        const localOnly = localRentals.filter((lr: Rental) => lr.id.startsWith('local_'));
+        const storedRentals = localStorage.getItem('rentals');
+        const localRentals = storedRentals ? JSON.parse(storedRentals) : [];
+        const localOnly = localRentals.filter((lr: Rental) => lr.id && lr.id.startsWith('local_'));
         const allRentals = [...firestoreData, ...localOnly];
         
         // Remove duplicates
@@ -309,9 +313,18 @@ const Rentals = () => {
                   <Button 
                     variant="outline" 
                     className="flex-1"
+                    asChild
+                  >
+                    <Link to={`/edit-booking/${rental.id}`}>
+                      <Edit className="w-4 h-4 mr-2" /> Edit
+                    </Link>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
                     onClick={() => handleViewAgreement(rental)}
                   >
-                    <Eye className="w-4 h-4 mr-2" /> View Agreement
+                    <Eye className="w-4 h-4 mr-2" /> View
                   </Button>
                   <Button 
                     variant="outline" 

@@ -12,7 +12,8 @@ import {
   Edit,
   ClipboardCheck,
   FileText,
-  Save
+  Save,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -722,16 +723,40 @@ const EditBooking = () => {
                 onChange={setAccessories}
               />
               <div className="grid md:grid-cols-2 gap-8">
-                <SignatureCanvas
-                  label="Client Signature"
-                  value={clientSignature}
-                  onChange={setClientSignature}
-                />
-                <SignatureCanvas
-                  label="Owner Signature"
-                  value={ownerSignature}
-                  onChange={setOwnerSignature}
-                />
+                <div className="space-y-4">
+                  <SignatureCanvas
+                    label="Client Signature"
+                    value={clientSignature}
+                    onChange={setClientSignature}
+                  />
+                  {clientSignature && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setClientSignature('')}
+                      className="text-destructive hover:bg-destructive/10 w-full"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Clear Client Signature
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <SignatureCanvas
+                    label="Owner Signature"
+                    value={ownerSignature}
+                    onChange={setOwnerSignature}
+                  />
+                  {ownerSignature && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setOwnerSignature('')}
+                      className="text-destructive hover:bg-destructive/10 w-full"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Clear Owner Signature
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ag-num">Agreement Number</Label>

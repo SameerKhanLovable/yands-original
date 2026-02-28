@@ -55,15 +55,15 @@ export const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-[#FDFCFB] flex flex-col font-sans">
       {/* Header - Modern Minimal */}
-      <header className="bg-white sticky top-0 z-50 border-b border-orange-100/60 shadow-[0_1px_2px_rgba(244,124,44,0.03)]">
+      <header className="bg-white sticky top-0 z-50 border-b border-orange-100/60 shadow-[0_1px_2px_rgba(244,124,44,0.03)] pb-safe">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-24 md:h-32">
+          <div className="flex items-center justify-between h-20 md:h-32">
             {/* Logo - Full Brand Logo */}
             <Link to="/" className="flex items-center group">
               <img 
                 src={brandLogo} 
                 alt="Yousif & Sons Rent A Car" 
-                className="h-24 md:h-30 w-auto object-contain"
+                className="h-16 md:h-30 w-auto object-contain"
               />
             </Link>
 
@@ -182,9 +182,42 @@ export const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 md:py-8 flex-1">
+      <main className="container mx-auto px-4 py-4 md:py-8 flex-1 pb-24 md:pb-8">
         {children}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 px-6 py-3 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
+        {navItems.map(({ to, icon: Icon, label }) => (
+          <Link
+            key={to}
+            to={to}
+            className={`flex flex-col items-center gap-1 transition-colors ${
+              location.pathname === to ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          >
+            <Icon className="w-6 h-6" />
+            <span className="text-[10px] font-medium">{label}</span>
+          </Link>
+        ))}
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center gap-1 text-muted-foreground"
+          >
+            <LogOut className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Logout</span>
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="flex flex-col items-center gap-1 text-muted-foreground"
+          >
+            <LogIn className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Login</span>
+          </Link>
+        )}
+      </nav>
 
       {/* Footer - Gray Theme */}
       <footer className="bg-muted border-t border-border py-10 mt-auto">
