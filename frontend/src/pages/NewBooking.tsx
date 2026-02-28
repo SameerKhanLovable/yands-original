@@ -299,7 +299,7 @@ const NewBooking = () => {
     };
 
     const rentalData = {
-      agreementNumber: agreementNumber || undefined,
+      agreementNumber: agreementNumber || `AGR-${Date.now().toString(36).toUpperCase()}`,
       client: { ...client, id: client.id || generateId() },
       vehicle: vehicleWithImage,
       witness,

@@ -244,6 +244,16 @@ const Rentals = () => {
                           <Button 
                             variant="ghost" 
                             size="sm" 
+                            asChild
+                            className="hover:bg-primary/10 hover:text-primary"
+                          >
+                            <Link to={`/edit-booking/${rental.id}`}>
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
                             onClick={() => handleViewAgreement(rental)}
                             className="hover:bg-primary/10 hover:text-primary"
                           >

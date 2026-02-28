@@ -251,7 +251,7 @@ export const VehicleSelector = ({ value, onChange }: VehicleSelectorProps) => {
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const yearList = [];
-    for (let y = currentYear + 1; y >= 2010; y--) {
+    for (let y = currentYear + 5; y >= 1990; y--) {
       yearList.push(y.toString());
     }
     return yearList;
@@ -346,7 +346,7 @@ export const VehicleSelector = ({ value, onChange }: VehicleSelectorProps) => {
 
   const validateYear = (yearStr: string): boolean => {
     const year = parseInt(yearStr);
-    return !isNaN(year) && year >= 2010 && year <= new Date().getFullYear() + 1;
+    return !isNaN(year) && year >= 1990 && year <= new Date().getFullYear() + 10;
   };
 
   const handleYearBlur = () => {
