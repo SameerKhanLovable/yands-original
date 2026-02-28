@@ -24,6 +24,14 @@ export const BookingSummaryDialog = ({ open, onClose, onConfirm, rental, isSubmi
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Agreement Number */}
+          <div className="border-2 border-primary rounded-lg p-4 bg-primary/10 mb-4">
+            <h3 className="font-bold text-lg mb-1 text-primary">📄 Agreement Number</h3>
+            <div className="text-2xl font-mono font-black text-primary tracking-wider">
+              {rental.agreementNumber || 'PENDING'}
+            </div>
+          </div>
+
           {/* Client Info */}
           <div className="border-2 border-primary/20 rounded-lg p-4 bg-primary/5">
             <h3 className="font-bold text-lg mb-3 text-primary">👤 Client Information</h3>
